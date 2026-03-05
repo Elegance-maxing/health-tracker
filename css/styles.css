@@ -758,12 +758,7 @@ input[type="number"]::-webkit-outer-spin-button {
   margin-bottom: var(--gap-sm);
 }
 
-.entry-card .photo-filename {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin-bottom: var(--gap-xs);
-  word-break: break-all;
-}
+
 
 .entry-card .entry-tags {
   display: flex;
