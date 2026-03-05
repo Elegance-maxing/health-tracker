@@ -44,8 +44,10 @@ async function openEntryScreen(type) {
     document.getElementById('photo-preview').classList.remove('has-image');
     document.getElementById('photo-preview').src = '';
     document.getElementById('photo-capture-btn').style.display = '';
-    document.getElementById('photo-capture-label').textContent = 'Tap to take or choose a photo';
+    document.getElementById('photo-gallery-btn').style.display = '';
+    document.getElementById('photo-capture-label').textContent = 'Take photo';
     document.getElementById('photo-note').value = '';
+    document.getElementById('photo-camera-input').value = '';
     document.getElementById('photo-file-input').value = '';
   } else if (type === 'note') {
     document.getElementById('note-text').value = '';

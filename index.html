@@ -134,10 +134,12 @@
 
       <img id="photo-preview" class="photo-preview" alt="Preview">
 
-      <button id="photo-capture-btn" class="photo-capture-btn" onclick="document.getElementById('photo-file-input').click()">
+      <button id="photo-capture-btn" class="photo-capture-btn" onclick="document.getElementById('photo-camera-input').click()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        <span id="photo-capture-label">Tap to take or choose a photo</span>
+        <span id="photo-capture-label">Take photo</span>
       </button>
+      <button id="photo-gallery-btn" class="photo-gallery-btn" onclick="document.getElementById('photo-file-input').click()">or choose from gallery</button>
+      <input type="file" id="photo-camera-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelected(this)">
       <input type="file" id="photo-file-input" accept="image/*" class="hidden" onchange="handlePhotoSelected(this)">
 
       <div class="form-group mt-md">

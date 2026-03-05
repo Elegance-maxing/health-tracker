@@ -555,6 +555,22 @@ input[type="number"]::-webkit-outer-spin-button {
   height: 32px;
 }
 
+.photo-gallery-btn {
+  display: block;
+  margin: var(--gap-sm) auto 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: var(--gap-xs) var(--gap-sm);
+}
+
+.photo-gallery-btn:hover {
+  color: var(--text);
+}
+
 /* --- Timeline --- */
 
 .timeline-header {

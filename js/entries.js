@@ -113,8 +113,10 @@ async function openEditScreen(entryId) {
     // Show capture button with "replace" text so user can optionally swap the photo
     const captureBtn = document.getElementById('photo-capture-btn');
     captureBtn.style.display = '';
-    document.getElementById('photo-capture-label').textContent = 'Tap to replace photo (optional)';
+    document.getElementById('photo-capture-label').textContent = 'Replace photo (optional)';
+    document.getElementById('photo-gallery-btn').style.display = 'none';
     document.getElementById('photo-note').value = entry.note || '';
+    document.getElementById('photo-camera-input').value = '';
     document.getElementById('photo-file-input').value = '';
     // Keep currentPhotoBlob null to indicate "no new photo selected"
     currentPhotoBlob = null;
@@ -253,6 +255,7 @@ async function handlePhotoSelected(input) {
     preview.src = URL.createObjectURL(currentPhotoBlob);
     preview.classList.add('has-image');
     document.getElementById('photo-capture-btn').style.display = 'none';
+    document.getElementById('photo-gallery-btn').style.display = 'none';
   } catch (err) {
     showToast('Failed to process image: ' + err.message);
   }
@@ -303,7 +306,9 @@ async function savePhotoEntry() {
   document.getElementById('photo-preview').classList.remove('has-image');
   document.getElementById('photo-preview').src = '';
   document.getElementById('photo-capture-btn').style.display = '';
+  document.getElementById('photo-gallery-btn').style.display = '';
   document.getElementById('photo-note').value = '';
+  document.getElementById('photo-camera-input').value = '';
   document.getElementById('photo-file-input').value = '';
   clearEntryState('photo');
 
