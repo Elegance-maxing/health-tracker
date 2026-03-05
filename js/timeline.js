@@ -86,7 +86,7 @@ async function renderEntryCard(entry) {
       bodyHtml = renderMeasurementBody(entry);
       break;
     case 'photo':
-      bodyHtml = await renderPhotoBody(entry);
+      bodyHtml = renderPhotoBody(entry);
       break;
     case 'note':
       bodyHtml = `<div class="note-text">${escapeHtml(entry.note || '')}</div>`;
@@ -110,9 +110,13 @@ async function renderEntryCard(entry) {
     }).join('')}</div>`;
   }
 
+  // Photo shown only when expanded
+  const photoHtml = entry.type === 'photo' ? renderPhotoFull(entry) : '';
+
   // Detail section (shown on expand)
   const detailHtml = `
     <div class="entry-detail">
+      ${photoHtml}
       <div class="detail-row">
         <span class="detail-label">Full timestamp</span>
         <span>${new Date(entry.timestamp).toLocaleString()}</span>
@@ -152,7 +156,11 @@ function renderMeasurementBody(entry) {
   return `<div class="measurement-summary">${items}</div>`;
 }
 
-async function renderPhotoBody(entry) {
+function renderPhotoBody(entry) {
+  return `<div class="photo-placeholder">Tap to view photo</div>`;
+}
+
+function renderPhotoFull(entry) {
   let src = '';
   if (entry.image instanceof Blob) {
     src = URL.createObjectURL(entry.image);
