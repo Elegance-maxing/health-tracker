@@ -1,4 +1,4 @@
-const CACHE_NAME = 'health-tracker-v1';
+const CACHE_NAME = 'health-tracker-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -40,21 +40,26 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// Stale-while-revalidate: serve cached version immediately, fetch update in background
+// Next visit gets the fresh version. Offline still works from cache.
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).then(response => {
-        // Cache successful GET requests
-        if (event.request.method === 'GET' && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => {
-        // Offline fallback for navigation requests
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.match(event.request).then(cached => {
+        const fetchPromise = fetch(event.request).then(response => {
+          if (event.request.method === 'GET' && response.status === 200) {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        }).catch(() => {
+          // Offline - return cached or fallback
+          if (event.request.mode === 'navigate') {
+            return cache.match('./index.html');
+          }
+          return cached;
+        });
+        // Return cached immediately if available, otherwise wait for network
+        return cached || fetchPromise;
       });
     })
   );
