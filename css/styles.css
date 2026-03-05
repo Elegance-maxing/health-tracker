@@ -1126,6 +1126,37 @@ input[type="number"]::-webkit-outer-spin-button {
   height: 16px;
 }
 
+.mt-reorder {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mt-arrow {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  line-height: 0;
+}
+
+.mt-arrow:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.mt-arrow:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+.mt-arrow svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* --- Add measurement type inline form --- */
 
 .add-mt-form {

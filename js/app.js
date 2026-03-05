@@ -69,8 +69,16 @@ async function renderSettingsPage() {
   if (types.length === 0) {
     mtContainer.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem">No measurement types defined.</div>';
   } else {
-    mtContainer.innerHTML = '<div class="manage-mt-list">' + types.map(mt => `
+    mtContainer.innerHTML = '<div class="manage-mt-list">' + types.map((mt, i) => `
       <div class="manage-mt-item">
+        <div class="mt-reorder">
+          <button class="mt-arrow" ${i === 0 ? 'disabled' : ''} onclick="moveMT('${mt.id}', -1)" title="Move up">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+          </button>
+          <button class="mt-arrow" ${i === types.length - 1 ? 'disabled' : ''} onclick="moveMT('${mt.id}', 1)" title="Move down">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
         <span class="mt-info">${mt.name} <span class="mt-unit">(${mt.unit})</span></span>
         <button class="mt-delete" onclick="deleteMT('${mt.id}')" title="Remove">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -106,6 +114,17 @@ async function addNewMeasurementType() {
   nameInput.value = '';
   unitInput.value = '';
   showToast(`Added "${name}"`);
+  renderSettingsPage();
+}
+
+async function moveMT(id, direction) {
+  const types = await getMeasurementTypes();
+  const index = types.findIndex(t => t.id === id);
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= types.length) return;
+  // Swap
+  [types[index], types[newIndex]] = [types[newIndex], types[index]];
+  await updateMeasurementTypeOrder(types);
   renderSettingsPage();
 }
 
