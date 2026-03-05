@@ -45,7 +45,7 @@ async function openEntryScreen(type) {
     document.getElementById('photo-preview').src = '';
     document.getElementById('photo-capture-btn').style.display = '';
     document.getElementById('photo-gallery-btn').style.display = '';
-    document.getElementById('photo-capture-label').textContent = 'Take photo';
+    document.getElementById('photo-capture-label').textContent = 'Choose from gallery';
     document.getElementById('photo-note').value = '';
     document.getElementById('photo-camera-input').value = '';
     document.getElementById('photo-file-input').value = '';
