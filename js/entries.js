@@ -250,14 +250,16 @@ async function saveMeasurementEntry() {
 // --- Photo Entry ---
 
 async function handlePhotoSelected(input) {
-  const file = input.files[0];
-  if (!file) return;
+  const files = Array.from(input.files);
+  if (files.length === 0) return;
 
   try {
-    const blob = await compressImage(file);
-    currentPhotoBlobs.push(blob);
+    for (const file of files) {
+      const blob = await compressImage(file);
+      currentPhotoBlobs.push(blob);
+    }
     renderPhotoThumbnails();
-    // Reset file input so the same file can be re-selected
+    // Reset file input so the same files can be re-selected
     input.value = '';
   } catch (err) {
     showToast('Failed to process image: ' + err.message);

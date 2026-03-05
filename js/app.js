@@ -2,9 +2,14 @@
 
 // --- Screen navigation ---
 
-function showScreen(screenId) {
+function showScreen(screenId, pushHistory = true) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(screenId).classList.add('active');
+
+  // Push to browser history so Android back button navigates within the app
+  if (pushHistory && screenId !== 'screen-home') {
+    history.pushState({ screen: screenId }, '', '');
+  }
 
   // Run screen-specific setup
   if (screenId === 'screen-data') {
@@ -19,7 +24,7 @@ function showScreen(screenId) {
 
 function goHome() {
   editingEntry = null;
-  showScreen('screen-home');
+  showScreen('screen-home', false);
   renderTimeline();
 }
 
@@ -181,6 +186,20 @@ async function requestPersistentStorage() {
     console.warn('Persistent storage request failed:', err);
   }
 }
+
+// --- Android back button / browser history ---
+
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.screen) {
+    // Going back to a previous app screen
+    showScreen(e.state.screen, false);
+  } else {
+    // No more app history, go home
+    editingEntry = null;
+    showScreen('screen-home', false);
+    renderTimeline();
+  }
+});
 
 // --- Init ---
 

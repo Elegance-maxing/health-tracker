@@ -140,7 +140,7 @@
       </button>
       <button id="photo-gallery-btn" class="photo-gallery-btn" onclick="document.getElementById('photo-camera-input').click()">or quick capture (lower quality)</button>
       <input type="file" id="photo-camera-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelected(this)">
-      <input type="file" id="photo-file-input" accept="image/*" class="hidden" onchange="handlePhotoSelected(this)">
+      <input type="file" id="photo-file-input" accept="image/*" multiple class="hidden" onchange="handlePhotoSelected(this)">
 
       <div class="form-group mt-md">
         <label class="form-label">Note (optional)</label>
