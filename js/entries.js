@@ -3,8 +3,21 @@
 // State for current entry being created or edited
 let selectedTags = {};  // { screenName: Set of tag names }
 let selectedRating = null;
-let currentPhotoBlob = null;
-let editingEntry = null; // When set, save functions update instead of create
+let currentPhotoBlobs = [];  // Array of blobs for multi-photo support
+let existingPhotos = [];     // When editing, blobs from the existing entry to keep
+let editingEntry = null;     // When set, save functions update instead of create
+
+// --- Backward-compat helper for multi-photo ---
+
+function getImagesFromEntry(entry) {
+  if (entry.images && Array.isArray(entry.images)) {
+    return [...entry.images];
+  }
+  if (entry.image) {
+    return [entry.image];
+  }
+  return [];
+}
 
 // --- Tag UI ---
 
@@ -58,7 +71,8 @@ function getSelectedTags(screenName) {
 function clearEntryState(screenName) {
   selectedTags[screenName] = new Set();
   selectedRating = null;
-  currentPhotoBlob = null;
+  currentPhotoBlobs = [];
+  existingPhotos = [];
   editingEntry = null;
 }
 
@@ -100,24 +114,17 @@ async function openEditScreen(entryId) {
     }
     document.getElementById('measurement-note').value = entry.note || '';
   } else if (type === 'photo') {
-    // Show existing photo
-    const preview = document.getElementById('photo-preview');
-    if (entry.image instanceof Blob) {
-      preview.src = URL.createObjectURL(entry.image);
-    } else if (typeof entry.image === 'string') {
-      preview.src = entry.image;
-    }
-    preview.classList.add('has-image');
-    // Show capture button with "replace" text so user can optionally swap the photo
-    const captureBtn = document.getElementById('photo-capture-btn');
-    captureBtn.style.display = '';
-    document.getElementById('photo-capture-label').textContent = 'Replace photo (optional)';
-    document.getElementById('photo-gallery-btn').style.display = 'none';
+    // Load existing photos into existingPhotos array (backward compat)
+    existingPhotos = getImagesFromEntry(entry);
+    currentPhotoBlobs = [];
+
+    // Render thumbnails
+    renderPhotoThumbnails();
+
+    document.getElementById('photo-capture-label').textContent = 'Add more photos';
     document.getElementById('photo-note').value = entry.note || '';
     document.getElementById('photo-camera-input').value = '';
     document.getElementById('photo-file-input').value = '';
-    // Keep currentPhotoBlob null to indicate "no new photo selected"
-    currentPhotoBlob = null;
   } else if (type === 'note') {
     document.getElementById('note-text').value = entry.note || '';
   } else if (type === 'checkin') {
@@ -247,14 +254,71 @@ async function handlePhotoSelected(input) {
   if (!file) return;
 
   try {
-    currentPhotoBlob = await compressImage(file);
-    const preview = document.getElementById('photo-preview');
-    preview.src = URL.createObjectURL(currentPhotoBlob);
-    preview.classList.add('has-image');
-    document.getElementById('photo-capture-btn').style.display = 'none';
-    document.getElementById('photo-gallery-btn').style.display = 'none';
+    const blob = await compressImage(file);
+    currentPhotoBlobs.push(blob);
+    renderPhotoThumbnails();
+    // Reset file input so the same file can be re-selected
+    input.value = '';
   } catch (err) {
     showToast('Failed to process image: ' + err.message);
+  }
+}
+
+function removeNewPhoto(index) {
+  currentPhotoBlobs.splice(index, 1);
+  renderPhotoThumbnails();
+}
+
+function removeExistingPhoto(index) {
+  existingPhotos.splice(index, 1);
+  renderPhotoThumbnails();
+}
+
+function renderPhotoThumbnails() {
+  const container = document.getElementById('photo-thumbnails');
+  if (!container) return;
+
+  const allPhotos = [];
+
+  // Existing photos first (when editing)
+  for (let i = 0; i < existingPhotos.length; i++) {
+    const blob = existingPhotos[i];
+    let src = '';
+    if (blob instanceof Blob) {
+      src = URL.createObjectURL(blob);
+    } else if (typeof blob === 'string') {
+      src = blob;
+    }
+    allPhotos.push(`
+      <div class="photo-thumb">
+        <img src="${src}" alt="Photo ${i + 1}">
+        <button class="photo-thumb-remove" onclick="event.stopPropagation();removeExistingPhoto(${i})" title="Remove">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    `);
+  }
+
+  // New photos
+  for (let i = 0; i < currentPhotoBlobs.length; i++) {
+    const src = URL.createObjectURL(currentPhotoBlobs[i]);
+    allPhotos.push(`
+      <div class="photo-thumb">
+        <img src="${src}" alt="New photo ${i + 1}">
+        <button class="photo-thumb-remove" onclick="event.stopPropagation();removeNewPhoto(${i})" title="Remove">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    `);
+  }
+
+  container.innerHTML = allPhotos.join('');
+
+  // Show or hide the thumbnail row
+  if (allPhotos.length > 0) {
+    container.classList.add('has-photos');
+  } else {
+    container.classList.remove('has-photos');
   }
 }
 
@@ -263,26 +327,33 @@ async function savePhotoEntry() {
   const tags = getSelectedTags('photo');
 
   if (editingEntry) {
+    // Combine existing photos (kept) with new photos
+    const allImages = [...existingPhotos, ...currentPhotoBlobs];
+    if (allImages.length === 0) {
+      showToast('Add at least one photo.');
+      return;
+    }
     const changes = {
+      images: allImages,
       note: note || undefined,
       tags
     };
-    // Only replace the image if a new one was selected
-    if (currentPhotoBlob) {
-      changes.image = currentPhotoBlob;
+    // Remove old single-image field if present
+    if (editingEntry.image !== undefined) {
+      changes.image = undefined;
     }
     await updateEntry(editingEntry.id, changes);
     requestPersistentStorage();
     showToast('Entry updated');
   } else {
-    if (!currentPhotoBlob) {
+    if (currentPhotoBlobs.length === 0) {
       showToast('Take or choose a photo first.');
       return;
     }
 
     const entry = {
       type: 'photo',
-      image: currentPhotoBlob,
+      images: currentPhotoBlobs,
       note: note || undefined,
       tags
     };
@@ -293,10 +364,8 @@ async function savePhotoEntry() {
   }
 
   // Reset
-  document.getElementById('photo-preview').classList.remove('has-image');
-  document.getElementById('photo-preview').src = '';
-  document.getElementById('photo-capture-btn').style.display = '';
-  document.getElementById('photo-gallery-btn').style.display = '';
+  document.getElementById('photo-thumbnails').innerHTML = '';
+  document.getElementById('photo-thumbnails').classList.remove('has-photos');
   document.getElementById('photo-note').value = '';
   document.getElementById('photo-camera-input').value = '';
   document.getElementById('photo-file-input').value = '';

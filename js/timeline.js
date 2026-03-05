@@ -157,17 +157,30 @@ function renderMeasurementBody(entry) {
 }
 
 function renderPhotoBody(entry) {
-  return `<div class="photo-placeholder">Tap to view photo</div>`;
+  const images = getImagesFromEntry(entry);
+  const count = images.length;
+  const label = count > 1 ? `Tap to view ${count} photos` : 'Tap to view photo';
+  return `<div class="photo-placeholder">${label}</div>`;
 }
 
 function renderPhotoFull(entry) {
-  let src = '';
-  if (entry.image instanceof Blob) {
-    src = URL.createObjectURL(entry.image);
-  } else if (typeof entry.image === 'string') {
-    src = entry.image;  // base64 data URL
+  const images = getImagesFromEntry(entry);
+  if (images.length === 0) return '';
+
+  let html = '<div class="entry-photos-stack">';
+  for (const img of images) {
+    let src = '';
+    if (img instanceof Blob) {
+      src = URL.createObjectURL(img);
+    } else if (typeof img === 'string') {
+      src = img;
+    }
+    if (src) {
+      html += `<img class="entry-photo" src="${src}" alt="Photo entry" loading="lazy">`;
+    }
   }
-  return src ? `<img class="entry-photo" src="${src}" alt="Photo entry" loading="lazy">` : '';
+  html += '</div>';
+  return html;
 }
 
 function renderCheckinBody(entry) {

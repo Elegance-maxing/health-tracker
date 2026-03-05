@@ -2,7 +2,9 @@
 
 // --- Export Modal ---
 
-function showExportModal() {
+let exportSelectedTags = new Set();
+
+async function showExportModal() {
   // Reset modal state
   document.querySelector('input[name="export-mode"][value="data-only"]').checked = true;
   document.getElementById('export-use-date-range').checked = false;
@@ -14,7 +16,38 @@ function showExportModal() {
   document.getElementById('export-date-start').value = thirtyDaysAgo;
   document.getElementById('export-date-end').value = today;
 
+  // Reset and render tag chips
+  exportSelectedTags = new Set();
+  await renderExportTagChips();
+
   document.getElementById('modal-export').classList.add('active');
+}
+
+async function renderExportTagChips() {
+  const allTags = await getAllTags();
+  const container = document.getElementById('export-tag-chips');
+  if (!container) return;
+
+  if (allTags.length === 0) {
+    container.innerHTML = '<span style="color:var(--text-muted);font-size:0.8rem">No tags yet.</span>';
+    return;
+  }
+
+  container.innerHTML = allTags.map(tag => {
+    const isSelected = exportSelectedTags.has(tag.name);
+    const safeName = tag.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return `<button class="tag-chip ${isSelected ? 'selected' : ''}"
+              onclick="toggleExportTag('${safeName}')">${escapeHtml(tag.name)}</button>`;
+  }).join('');
+}
+
+function toggleExportTag(tagName) {
+  if (exportSelectedTags.has(tagName)) {
+    exportSelectedTags.delete(tagName);
+  } else {
+    exportSelectedTags.add(tagName);
+  }
+  renderExportTagChips();
 }
 
 // Toggle date range fields visibility
@@ -75,10 +108,12 @@ async function doExport(exportType) {
       return;
     }
 
+    const filterTags = Array.from(exportSelectedTags);
+
     closeModal('modal-export');
     showToast('Preparing export...');
 
-    const data = await buildExport(mode, useDateRange ? startDate : null, useDateRange ? endDate : null);
+    const data = await buildExport(mode, useDateRange ? startDate : null, useDateRange ? endDate : null, filterTags);
     const json = JSON.stringify(data, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -92,7 +127,8 @@ async function doExport(exportType) {
       const now = new Date();
       const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
       const rangeSegment = useDateRange ? '-Range' : '';
-      filename = `HT-AR-${modeLabel}${rangeSegment}-${ts}.json`;
+      const tagSegment = filterTags.length > 0 ? '-Tagged' : '';
+      filename = `HT-AR-${modeLabel}${rangeSegment}${tagSegment}-${ts}.json`;
     }
 
     const a = document.createElement('a');
@@ -111,13 +147,20 @@ async function doExport(exportType) {
   }
 }
 
-async function buildExport(mode, startDate, endDate) {
+async function buildExport(mode, startDate, endDate, filterTags) {
   // Get entries (filtered by date range or all)
   let entries;
   if (startDate && endDate) {
     entries = await getEntriesInRange(startDate, endDate);
   } else {
     entries = await db.entries.toArray();
+  }
+
+  // Filter by tags if any are selected
+  if (filterTags && filterTags.length > 0) {
+    entries = entries.filter(entry =>
+      entry.tags && entry.tags.some(t => filterTags.includes(t))
+    );
   }
 
   const measurementTypes = await db.measurementTypes.toArray();
@@ -129,12 +172,28 @@ async function buildExport(mode, startDate, endDate) {
 
     if (entry.type === 'photo') {
       if (mode === 'data-only') {
-        // Strip the image data entirely, keep everything else
+        // Strip all image data, keep everything else
         delete processed.image;
         delete processed._imageEncoded;
+        delete processed.images;
+        delete processed._imagesEncoded;
         processed._photoStripped = true;
       } else {
         // Full backup: encode blobs to base64
+        // Handle new multi-image format
+        if (entry.images && Array.isArray(entry.images)) {
+          const encoded = [];
+          for (const img of entry.images) {
+            if (img instanceof Blob) {
+              encoded.push(await blobToBase64(img));
+            } else {
+              encoded.push(img);
+            }
+          }
+          processed.images = encoded;
+          processed._imagesEncoded = true;
+        }
+        // Handle old single-image format
         if (entry.image instanceof Blob) {
           processed.image = await blobToBase64(entry.image);
           processed._imageEncoded = true;

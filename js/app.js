@@ -41,10 +41,8 @@ async function openEntryScreen(type) {
     renderRatingButtons();
     document.getElementById('checkin-note').value = '';
   } else if (type === 'photo') {
-    document.getElementById('photo-preview').classList.remove('has-image');
-    document.getElementById('photo-preview').src = '';
-    document.getElementById('photo-capture-btn').style.display = '';
-    document.getElementById('photo-gallery-btn').style.display = '';
+    document.getElementById('photo-thumbnails').innerHTML = '';
+    document.getElementById('photo-thumbnails').classList.remove('has-photos');
     document.getElementById('photo-capture-label').textContent = 'Choose from gallery';
     document.getElementById('photo-note').value = '';
     document.getElementById('photo-camera-input').value = '';

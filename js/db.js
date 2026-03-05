@@ -36,6 +36,12 @@ async function updateEntry(id, changes) {
   if (!existing) throw new Error('Entry not found');
 
   const updated = { ...existing, ...changes, id: existing.id, timestamp: existing.timestamp };
+  // Remove any keys explicitly set to undefined (used for field cleanup)
+  for (const key of Object.keys(updated)) {
+    if (updated[key] === undefined) {
+      delete updated[key];
+    }
+  }
   await db.entries.put(updated);
   return updated;
 }
@@ -137,9 +143,25 @@ async function exportAllData() {
   const processedEntries = [];
   for (const entry of entries) {
     const processed = { ...entry };
-    if (entry.type === 'photo' && entry.image instanceof Blob) {
-      processed.image = await blobToBase64(entry.image);
-      processed._imageEncoded = true;
+    if (entry.type === 'photo') {
+      // Handle new multi-image format
+      if (entry.images && Array.isArray(entry.images)) {
+        const encoded = [];
+        for (const img of entry.images) {
+          if (img instanceof Blob) {
+            encoded.push(await blobToBase64(img));
+          } else {
+            encoded.push(img);
+          }
+        }
+        processed.images = encoded;
+        processed._imagesEncoded = true;
+      }
+      // Handle old single-image format
+      if (entry.image instanceof Blob) {
+        processed.image = await blobToBase64(entry.image);
+        processed._imageEncoded = true;
+      }
     }
     processedEntries.push(processed);
   }
@@ -191,7 +213,14 @@ async function importData(data) {
   for (const entry of data.entries) {
     const existing = await db.entries.get(entry.id);
     if (!existing) {
-      // Convert base64 photos back to blobs
+      // Convert base64 images array back to blobs
+      if (entry._imagesEncoded && Array.isArray(entry.images)) {
+        entry.images = entry.images.map(img =>
+          typeof img === 'string' ? base64ToBlob(img) : img
+        );
+        delete entry._imagesEncoded;
+      }
+      // Convert old single base64 photo back to blob
       if (entry._imageEncoded && typeof entry.image === 'string') {
         entry.image = base64ToBlob(entry.image);
         delete entry._imageEncoded;
