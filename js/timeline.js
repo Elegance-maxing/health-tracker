@@ -159,7 +159,11 @@ async function renderPhotoBody(entry) {
   } else if (typeof entry.image === 'string') {
     src = entry.image;  // base64 data URL
   }
-  return src ? `<img class="entry-photo" src="${src}" alt="Photo entry" loading="lazy">` : '';
+  let html = src ? `<img class="entry-photo" src="${src}" alt="Photo entry" loading="lazy">` : '';
+  if (entry.originalFilename) {
+    html += `<div class="photo-filename">${escapeHtml(entry.originalFilename)}</div>`;
+  }
+  return html;
 }
 
 function renderCheckinBody(entry) {

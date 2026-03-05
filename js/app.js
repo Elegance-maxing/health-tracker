@@ -200,6 +200,9 @@ async function init() {
   // Request persistent storage so IndexedDB data survives storage pressure
   await requestPersistentStorage();
 
+  // Render last backup indicator
+  renderLastBackupIndicator();
+
   // Render home timeline
   currentDate = toDateString(new Date());
   await renderTimeline();

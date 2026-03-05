@@ -175,6 +175,15 @@ body {
   color: var(--accent);
 }
 
+/* --- Last backup indicator --- */
+
+.last-backup-indicator {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: var(--gap-md);
+}
+
 /* --- Screens --- */
 
 .screen {
@@ -733,6 +742,13 @@ input[type="number"]::-webkit-outer-spin-button {
   margin-bottom: var(--gap-sm);
 }
 
+.entry-card .photo-filename {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: var(--gap-xs);
+  word-break: break-all;
+}
+
 .entry-card .entry-tags {
   display: flex;
   flex-wrap: wrap;
@@ -1137,6 +1153,12 @@ input[type="number"]::-webkit-outer-spin-button {
 .export-date-row input[type="date"]:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.export-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
 }
 
 /* Color scheme for date picker in dark mode */

@@ -52,6 +52,9 @@
         </button>
       </div>
 
+      <!-- Last backup indicator -->
+      <div id="last-backup-indicator" class="last-backup-indicator"></div>
+
       <!-- Timeline -->
       <div id="timeline-section">
         <div class="timeline-header">
@@ -135,7 +138,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         <span id="photo-capture-label">Tap to take or choose a photo</span>
       </button>
-      <input type="file" id="photo-file-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelected(this)">
+      <input type="file" id="photo-file-input" accept="image/*" class="hidden" onchange="handlePhotoSelected(this)">
 
       <div class="form-group mt-md">
         <label class="form-label">Note (optional)</label>
@@ -370,9 +373,12 @@
           </div>
         </div>
 
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modal-export')">Cancel</button>
-          <button class="btn btn-primary" style="flex:1" onclick="doExport()">Export</button>
+        <div class="export-actions">
+          <button class="btn btn-secondary btn-full" onclick="closeModal('modal-export')">Cancel</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" style="flex:1" onclick="doExport('quick')">Quick Backup</button>
+            <button class="btn btn-primary" style="flex:1" onclick="doExport('archive')">Archive Backup</button>
+          </div>
         </div>
       </div>
     </div>

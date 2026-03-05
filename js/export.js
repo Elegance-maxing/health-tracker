@@ -24,9 +24,40 @@ document.addEventListener('change', (e) => {
   }
 });
 
+// --- Last backup tracking ---
+
+function recordBackupTimestamp() {
+  localStorage.setItem('lastBackupTime', new Date().toISOString());
+  renderLastBackupIndicator();
+}
+
+function renderLastBackupIndicator() {
+  const el = document.getElementById('last-backup-indicator');
+  if (!el) return;
+
+  const stored = localStorage.getItem('lastBackupTime');
+  if (!stored) {
+    el.textContent = 'Last backup: Never';
+    return;
+  }
+
+  const backupDate = new Date(stored);
+  const now = new Date();
+  const diffMs = now - backupDate;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    el.textContent = 'Last backup: Today';
+  } else if (diffDays === 1) {
+    el.textContent = 'Last backup: 1 day ago';
+  } else {
+    el.textContent = `Last backup: ${diffDays} days ago`;
+  }
+}
+
 // --- Export ---
 
-async function doExport() {
+async function doExport(exportType) {
   try {
     // Read modal options
     const mode = document.querySelector('input[name="export-mode"]:checked').value;
@@ -52,11 +83,17 @@ async function doExport() {
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
 
-    // Build filename
-    const dateStr = toDateString(new Date());
-    const suffix = mode === 'data-only' ? '-data-only' : '-full';
-    const rangeSuffix = useDateRange ? `-${startDate}-to-${endDate}` : '';
-    const filename = `health-tracker${suffix}${rangeSuffix}-${dateStr}.json`;
+    // Build filename based on export type
+    const modeLabel = mode === 'data-only' ? 'DataOnly' : 'All';
+    let filename;
+    if (exportType === 'quick') {
+      filename = `HT-BU-${modeLabel}.json`;
+    } else {
+      const now = new Date();
+      const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+      const rangeSegment = useDateRange ? '-Range' : '';
+      filename = `HT-AR-${modeLabel}${rangeSegment}-${ts}.json`;
+    }
 
     const a = document.createElement('a');
     a.href = url;
@@ -66,6 +103,7 @@ async function doExport() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
+    recordBackupTimestamp();
     showToast(`Exported ${data.entries.length} entries`);
   } catch (err) {
     showToast('Export failed: ' + err.message);
@@ -107,7 +145,7 @@ async function buildExport(mode, startDate, endDate) {
     processedEntries.push(processed);
   }
 
-  return {
+  const exportData = {
     version: 1,
     exportMode: mode,
     exportedAt: new Date().toISOString(),
@@ -115,6 +153,15 @@ async function buildExport(mode, startDate, endDate) {
     measurementTypes,
     tags
   };
+
+  if (startDate && endDate) {
+    exportData.dateRange = {
+      start: startDate,
+      end: endDate
+    };
+  }
+
+  return exportData;
 }
 
 // --- Import ---

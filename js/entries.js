@@ -4,6 +4,7 @@
 let selectedTags = {};  // { screenName: Set of tag names }
 let selectedRating = null;
 let currentPhotoBlob = null;
+let currentPhotoFilename = null;
 let editingEntry = null; // When set, save functions update instead of create
 
 // --- Tag UI ---
@@ -59,6 +60,7 @@ function clearEntryState(screenName) {
   selectedTags[screenName] = new Set();
   selectedRating = null;
   currentPhotoBlob = null;
+  currentPhotoFilename = null;
   editingEntry = null;
 }
 
@@ -246,6 +248,7 @@ async function handlePhotoSelected(input) {
 
   try {
     currentPhotoBlob = await compressImage(file);
+    currentPhotoFilename = file.name || null;
     const preview = document.getElementById('photo-preview');
     preview.src = URL.createObjectURL(currentPhotoBlob);
     preview.classList.add('has-image');
@@ -267,6 +270,9 @@ async function savePhotoEntry() {
     // Only replace the image if a new one was selected
     if (currentPhotoBlob) {
       changes.image = currentPhotoBlob;
+      if (currentPhotoFilename) {
+        changes.originalFilename = currentPhotoFilename;
+      }
     }
     await updateEntry(editingEntry.id, changes);
     requestPersistentStorage();
@@ -283,6 +289,10 @@ async function savePhotoEntry() {
       note: note || undefined,
       tags
     };
+
+    if (currentPhotoFilename) {
+      entry.originalFilename = currentPhotoFilename;
+    }
 
     await saveEntry(entry);
     requestPersistentStorage();
