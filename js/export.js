@@ -90,7 +90,7 @@ function renderLastBackupIndicator() {
 
 // --- Export ---
 
-async function doExport(exportType) {
+async function doExport() {
   try {
     // Read modal options
     const mode = document.querySelector('input[name="export-mode"]:checked').value;
@@ -118,18 +118,13 @@ async function doExport(exportType) {
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
 
-    // Build filename based on export type
+    // Build filename
     const modeLabel = mode === 'data-only' ? 'DataOnly' : 'All';
-    let filename;
-    if (exportType === 'quick') {
-      filename = `HT-BU-${modeLabel}.json`;
-    } else {
-      const now = new Date();
-      const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-      const rangeSegment = useDateRange ? '-Range' : '';
-      const tagSegment = filterTags.length > 0 ? '-Tagged' : '';
-      filename = `HT-AR-${modeLabel}${rangeSegment}${tagSegment}-${ts}.json`;
-    }
+    const now = new Date();
+    const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+    const rangeSegment = useDateRange ? '-Range' : '';
+    const tagSegment = filterTags.length > 0 ? '-Tagged' : '';
+    const filename = `HT-Backup-${modeLabel}${rangeSegment}${tagSegment}-${ts}.json`;
 
     const a = document.createElement('a');
     a.href = url;
